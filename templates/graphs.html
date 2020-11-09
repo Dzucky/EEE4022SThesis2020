@@ -1,0 +1,163 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<head>
+  <title>Index</title>
+</head>
+
+<div>
+  <canvas id="velocity" width="800" height="253"></canvas>
+  <canvas id="altitude" width="800" height="253"></canvas>
+  <canvas id="Q" width="800" height="253"></canvas>
+</div>
+
+<script>
+  var velocity = {{ vel | tojson }};
+  var altitude = {{ alt | tojson }};
+  var Q = {{ q | tojson }};
+  var t = {{ time | tojson }};
+
+  function datarize(xdata, ydata) {
+    stuff = [];
+    for (var i = 0; i < xdata.length; i++) {
+      stuff.push({ x: xdata[i], y: ydata[i] });
+    };
+    return stuff;
+  }
+
+  var veldata = datarize(t, velocity);
+
+  var velChart = new Chart("velocity", {
+    type: "line",
+    data: {
+      datasets: [
+        {
+          label: "Velocity",
+          data: veldata,
+          borderColor: 'blue',
+          borderWidth: 0.5,
+          pointRadius: 1,
+          // pointBackgroundColor: ['#000', '#00bcd6', '#d300d6'],
+          // pointBorderColor: ['#000', '#00bcd6', '#d300d6'],
+          fill: false,
+          tension: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        xAxes: [
+          {
+            type: "linear",
+            position: "bottom",
+            scaleLabel: {
+              display: true,
+              labelString: 'Time (s)'
+            }
+          }
+        ],
+        yAxes: [{
+          display: true,
+          scaleLabel: {
+            display: true,
+            labelString: 'Velocity (m/s)'
+          }
+        }]
+      }
+    }
+
+
+  });
+
+  var altitudedata = datarize(t, altitude);
+
+  var altiChart = new Chart("altitude", {
+    type: "line",
+    data: {
+      datasets: [
+        {
+          label: "Altitude",
+          data: altitudedata,
+          borderColor: 'green',
+          borderWidth: 0.5,
+          pointRadius: 1,
+          // pointBackgroundColor: ['#000', '#00bcd6', '#d300d6'],
+          // pointBorderColor: ['#000', '#00bcd6', '#d300d6'],
+          fill: false,
+          tension: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        xAxes: [
+          {
+            type: "linear",
+            position: "bottom",
+            scaleLabel: {
+              display: true,
+              labelString: 'Time (s)'
+            }
+          }
+        ],
+        yAxes: [{
+          display: true,
+          scaleLabel: {
+            display: true,
+            labelString: 'Altitude (m)'
+          }
+        }]
+      }
+    }
+  });
+
+  var qdata = datarize(t, Q);
+
+  var qChart = new Chart("Q", {
+    type: "line",
+    data: {
+      datasets: [
+        {
+          label: "Q-Flag",
+          data: qdata,
+          borderColor: 'black',
+          borderWidth: 0.5,
+          pointRadius: 1,
+          // pointBackgroundColor: ['#000', '#00bcd6', '#d300d6'],
+          // pointBorderColor: ['#000', '#00bcd6', '#d300d6'],
+          fill: false,
+          tension: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        xAxes: [
+          {
+            type: "linear",
+            position: "bottom",
+            scaleLabel: {
+              display: true,
+              labelString: 'Time (s)'
+            }
+          }
+        ],
+        yAxes: [{
+          display: true,
+          scaleLabel: {
+            display: true,
+            labelString: 'Q-Flag'
+          }
+        }]
+      }
+    }
+  });
+
+</script>
+{% endblock %}

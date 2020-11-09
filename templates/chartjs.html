@@ -1,0 +1,192 @@
+{% extends "layout.html" %}
+{% block content %}
+<div style="display: flex; justify-content: space-evenly">
+    <div>
+        <canvas id="image" width="800" height="253"></canvas>
+    </div>
+    <div style="display: block;">
+        <canvas id="range" height="253" style="display: flex;"></canvas>
+    </div>
+</div>
+
+<div style="display: flex; justify-content: space-evenly">
+    <div style="display:block;">
+        <canvas id="azimuth" width="900" style="display: flex;"></canvas>
+    </div>
+    <canvas id="power" width="400" height="400"></canvas>
+</div>
+
+<script>
+    //draws the image onto canvas 
+    var ctx = document.getElementById('image').getContext('2d');
+    var im = new Image();
+    im.onload = start;
+    im.onerror = function () { alert(im.src + ' failed'); }
+    im.src = {{ image | tojson }};
+    function start() {
+        ctx.scale(1, -1)                    //flips image horizontally. 
+        ctx.drawImage(im, 0, 0, 800, -253);
+    }
+
+    let rngx = {{ rngx | tojson}};  //image[:, axis_1_init]
+    let rngy = {{ rngy | tojson}};  //rg_axis
+    console.log(rngy.length)
+    //console.log(rngx);
+    var rangedata = datarize(rngx, rngy);
+    var rangeChart = new Chart("range", {
+        type: "scatter",
+        data: {
+            datasets: [
+                {
+                    label: "Range vs Power",
+                    data: rangedata,
+                    borderColor: 'orange',
+                    borderWidth: 2,
+                    // pointBackgroundColor: ['#000', '#00bcd6', '#d300d6'],
+                    // pointBorderColor: ['#000', '#00bcd6', '#d300d6'],
+                    pointRadius: 1,
+                    pointHoverRadius: 5,
+                    fill: false,
+                    tension: 0,
+                    showLine: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                xAxes: [
+                    {
+                        type: "linear",
+                        position: "bottom",
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Normalized Power (dB)'
+                        }
+                    }
+                ],
+                yAxes: [{
+                    display: true,
+                    ticks: {
+                        reverse: true
+                    },
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Range'
+                    }
+                }]
+            }
+        }
+
+    });
+
+
+    let azx = {{ azx | tojson}}; //az_axis
+    let azy = {{ azy | tojson}}; //image[axis_0_init]
+
+    var azimuthdata = datarize(azx, azy);
+    var aziChart = new Chart("azimuth", {
+        type: "scatter",
+        data: {
+            datasets: [
+                {
+                    label: "Azimuth vs Power",
+                    data: azimuthdata,
+                    borderColor: 'blue',
+                    borderWidth: 2,
+                    // pointBackgroundColor: ['#000', '#00bcd6', '#d300d6'],
+                    // pointBorderColor: ['#000', '#00bcd6', '#d300d6'],
+                    pointRadius: 1,
+                    pointHoverRadius: 5,
+                    fill: false,
+                    tension: 0,
+                    showLine: true
+                }
+            ]
+        },
+        options: {
+            maintainAspectRatio: true,
+            scales: {
+                xAxes: [
+                    {
+                        type: "linear",
+                        position: "bottom",
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Azimuth'
+                        }
+                    }
+                ],
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Normalized Power (dB)'
+                    }
+                }]
+            }
+        }
+
+    });
+
+    function datarize(xdata, ydata) {
+        stuff = [];
+        for (var i = 0; i < xdata.length; i++) {
+            stuff.push({ x: xdata[i], y: ydata[i] });
+        };
+        return stuff;
+    }
+
+    function addData(chart, label, data) {
+        chart.data.datasets[0].data = data;
+        chart.update();
+        console.log("adding data");
+    }
+
+    function removeData(chart) {
+        chart.data.datasets[0].data = [];
+        chart.update();
+        console.log("removing data");
+    }
+
+    function getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+            x: evt.clientX - rect.left,
+            y: evt.clientY - rect.top
+        };
+    }
+
+    var canvas = document.getElementById('image');
+    var context = canvas.getContext('2d');
+
+    canvas.addEventListener('click', function (evt) {
+        var mousePos = getMousePos(canvas, evt);
+        console.log(mousePos.x + ", " + mousePos.y);
+
+
+        $(function () {
+            $.getJSON('/updateGraphs?x=' + mousePos.x + '&y=' + mousePos.y,
+                function () {
+                })
+                .always(function (newrng_newaz_lists) {
+                    var rngdata = datarize(newrng_newaz_lists[0], rngy);
+                    // console.log(newrng_newaz_lists[0]);
+                    // console.log(newrng_newaz_lists[1]);
+                    var azdata = datarize(azx, newrng_newaz_lists[1]);
+                    removeData(rangeChart);
+                    removeData(aziChart);
+                    addData(rangeChart, "Scatter Dataset", rngdata);
+                    addData(aziChart, "Scatter Dataset", azdata);
+                });
+
+            return false;
+
+        });
+
+
+        //mousePos.x will be x coord of mouse click on canvas
+
+    }, false);
+</script>
+{% endblock %}

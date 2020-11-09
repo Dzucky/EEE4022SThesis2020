@@ -1,0 +1,189 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1 style="font-size: 25px; font-family: Georgia, serif; text-align: center; font-weight: bold;">MILOSAR</h1>
+<div class='vertmencontain'>
+  <div class="vertical-menu">
+    <ul style="list-style-type:none;">
+      <li><h1 style="font-size: 25px; font-family: Georgia, serif; text-align: left;">Datasets</h1></li>
+      <li><input type="text" id="mySearch" onkeyup="querySearch()" placeholder="Search.." title="Type in a category">
+      </li>
+    </ul>
+    <ul style="list-style-type:none;" id='vmenu'>
+      {% for n in names %}
+
+      <li><a href="#" id='{{n}}' onclick="reload('{{n}}')">{{n}}</a></li>
+
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+<iframe id='iframeid' src={{my_map}} width="100%" height="300" style="border:1px solid black;">
+</iframe>
+
+<br>
+
+
+<div class="mytooltip">Type command:
+  <input type="text" id="command" name="command">
+  <span class="tooltiptext">List of commands limited to: setColourMap(colour), gaussian(stddev), changeDR(firstValue,
+    secondValue) and originalImage()</span>
+</div>
+<button onclick="ChangeProcess()" class=grey style="height:75px;width:150px">Execute Command</button>
+<br>
+<div>
+  <select id="cmbbox1">
+    {% for n in names %}
+
+    <option value="{{n}}">{{n}}</option>
+
+    {% endfor %}
+  </select>
+  <select id="cmbbox2">
+    {% for n in names %}
+
+    <option value="{{n}}">{{n}}</option>
+
+    {% endfor %}
+  </select>
+  <button onclick="Generate2()" class=grey style="height:75px;width:150px">View Both Images</button>
+</div>
+
+<p><a href=graphs><button class=grey style="height:75px;width:150px">Show Graphs</button></a></p>
+
+<div>
+  {% for sets in key_list%}
+  {% set ind1 = key_list[loop.index-1] %}
+  {% set ind2 = val_list[loop.index-1] %}
+  <div id="{{loop.index}}" style="display: none;">
+    {% for attrs in ind1%}
+    {% set newind1 = ind1[loop.index-1] %}
+    {% set newind2 = ind2[loop.index-1] %}
+    <p> {{newind1}} </p>
+    <textarea readonly>{{newind2}}</textarea>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+
+
+<script>
+  function Generate2() {
+    var set1 = document.getElementById("cmbbox1").value;
+    var set2 = document.getElementById("cmbbox2").value;
+    $(function () {
+      $.getJSON('/gen2maps?set1=' + set1 + '&set2=' + set2,
+        function () {
+        })
+        .always(function () {
+          var tail = '?r=' + Math.round((Math.random() * 1000));  //refreshes iframe
+          var url = document.getElementById('iframeid').src.split('?')[0];
+          document.getElementById('iframeid').src = url + tail;
+          console.log("ahhh refreshing");
+        });
+
+      return false;
+
+    });
+  }
+</script>
+
+<script>
+  function ChangeProcess() {
+    command = document.getElementById("command").value;
+    commandfunction = command.substring(0, command.indexOf('('));
+    parameters = command.substring(command.indexOf('(') + 1, command.indexOf(')'));
+    $(function () {
+      $.getJSON('/processCommand?command=' + commandfunction + '&parameters=' + parameters + '&selected=' + window.value,
+        function () {
+        })
+        .always(function () {
+          reload(window.value);
+        });
+
+      return false;
+
+    });
+  }
+</script>
+<script>
+
+  var enabled = true;
+
+  var firstItem = {{ first | tojson}};
+  if (typeof window.value == 'undefined') {
+    reload(firstItem);
+  }
+  else {
+    reload(window.value);
+  }
+
+  function reload(current) {
+    if (enabled) {  //enabled is to prevent the user from choosing another dataset before the current one has finished loading in and prevents the user from selecting the same one twice.
+      enabled = false;
+      $(function () {
+
+        $.getJSON('/backgroundreload?datasetname=' + current,
+          function () {
+          })
+          .always(function () {
+            var tail = '?r=' + Math.round((Math.random() * 1000));
+            var url = document.getElementById('iframeid').src.split('?')[0];
+            document.getElementById('iframeid').src = url + tail;
+            console.log("refreshing iframe");
+            enabled = true;
+          });
+
+        return false;
+
+      });
+      var lis = document.getElementById("vmenu").getElementsByTagName("A"); //deselect all items
+      for (i = 0; i < lis.length; i++) {
+        lis[i].removeAttribute("class");
+      }
+
+      var b = document.getElementById(current);
+      b.setAttribute("class", 'active');
+      window.value = current;
+      
+      ul = document.getElementById("vmenu");
+      li = ul.getElementsByTagName("li");
+      for (i = 0; i < li.length; i++) {
+        if (li[i].outerText == current)   //makes the selected datasets attributes visible
+        {
+          //console.log(i);
+          var ats = document.getElementById(i + 1);
+          ats.setAttribute("style", "display:block;");
+        }
+        else {
+          var ats = document.getElementById(i + 1);
+          ats.setAttribute("style", "display:none;");
+        }
+      }
+    }
+    else {
+      console.log('error reloading');
+    }
+  }
+
+
+
+  function querySearch() {
+    // Declare variables
+    var  a;
+    var input = document.getElementById("mySearch");
+    var filter = input.value.toUpperCase();
+    var ul = document.getElementById("vmenu");
+    var li = ul.getElementsByTagName("li");
+
+    // Loop through all list items, and hide those who don't match the search query
+    for (var i = 0; i < li.length; i++) {
+      a = li[i].getElementsByTagName("a")[0];
+      if (a.innerHTML.toUpperCase().indexOf(filter) > -1) {
+        li[i].style.display = "";
+      } else {
+        li[i].style.display = "none";
+      }
+    }
+  }
+</script>
+{% endblock %}
