@@ -66,7 +66,7 @@ for filename in glob.glob(os.path.join(folder_path, '*.h5')):
         count = count+dt[i]
         time[i] = count
     times.append(time)
-    #generatePNG(binaryFile, name, rangebins, pulses, dimensions[0], dimensions[1], dr, course)  #run through the file and generate the image.
+    generatePNG(binaryFile, name, rangebins, pulses, dimensions[0], dimensions[1], dr, course)  #run through the file and generate the image.
 file.close()
 
 rg_axis = 0 #global
